@@ -2,7 +2,7 @@
 title: '스크린 리더 사용자를 위한 웹 개발 가이드'
 description: '시각 장애인이 사용하는 스크린 리더를 고려한 웹 개발 모범 사례를 소개합니다'
 pubDate: 'Mar 03 2026'
-heroImage: '../../assets/blog-placeholder-3.jpg'
+heroImage: '../../assets/screen-reader-hero.png'
 ---
 
 ## 스크린 리더란?

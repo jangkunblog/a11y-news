@@ -2,7 +2,7 @@
 title: '디지털 접근성 뉴스 블로그를 시작합니다'
 description: '웹 접근성과 디지털 포용에 관한 최신 정보를 공유하는 블로그를 소개합니다'
 pubDate: 'Mar 05 2026'
-heroImage: '../../assets/blog-placeholder-1.jpg'
+heroImage: '../../assets/welcome-a11y-news-hero.png'
 ---
 
 ## 블로그 소개

@@ -2,7 +2,7 @@
 title: 'WCAG 2.2 주요 변경 사항 정리'
 description: 'WCAG 2.2에서 새롭게 추가된 접근성 기준과 변경 사항을 알아봅니다'
 pubDate: 'Mar 04 2026'
-heroImage: '../../assets/blog-placeholder-2.jpg'
+heroImage: '../../assets/wcag-updates-hero.png'
 ---
 
 ## WCAG 2.2 개요
