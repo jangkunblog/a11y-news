@@ -8,6 +8,6 @@ import { defineConfig } from 'astro/config';
 export default defineConfig({
 	site: 'https://jangkunblog.github.io',
 	// GitHub Pages 배포 시 주석 해제
-	// base: '/a11y-news',
+	base: '/a11y-news',
 	integrations: [mdx(), sitemap()],
 });
