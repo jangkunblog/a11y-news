@@ -194,7 +194,7 @@ Pull Request 자동 생성 ✨
 1. **"Conversation" 탭**으로 돌아가기
 2. 하단의 **"Merge pull request"** 버튼 클릭
 3. **"Confirm merge"** 클릭
-4. ✨ **자동으로 Netlify 배포 시작!**
+4. ✨ **자동으로 Vercel 배포 시작!**
 5. 약 1-2분 후 블로그에서 확인 가능
 
 **❌ 내용이 부적절한 경우:**
@@ -329,7 +329,7 @@ git push
 #### Q4. Merge 후 블로그에 표시되지 않아요
 
 **확인 사항:**
-1. Netlify 배포 상태 확인
+1. Vercel 배포 상태 확인
    - https://app.netlify.com
    - 사이트 선택 > Deploys 탭
    - 최근 배포가 "Published" 상태인지 확인

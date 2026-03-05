@@ -203,7 +203,7 @@ jobs:
             
             ---
             
-            💡 Merge 시 자동으로 Netlify에 배포됩니다." \
+            💡 Merge 시 자동으로 Vercel에 배포됩니다." \
             --base main \
             --head ${BRANCH_NAME}
           
