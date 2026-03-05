@@ -246,6 +246,23 @@ h6 {
 		padding-left: 4rem;
 	}
 }
+
+/* 출처 링크 스타일링 */
+.prose p a[href^="http"] {
+	color: rgb(var(--gray));
+	font-size: 0.9em;
+	text-decoration: none;
+	display: inline-block;
+	margin-top: 0.8em;
+	padding-top: 0.5em;
+	border-top: 1px solid rgb(var(--gray-light));
+}
+
+.prose p a[href^="http"]:hover {
+	color: rgb(var(--accent));
+	text-decoration: underline;
+}
+
 strong,
 b {
 	font-weight: 700;
