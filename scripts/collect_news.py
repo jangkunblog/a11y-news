@@ -15,6 +15,7 @@ import feedparser
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict
+from urllib.parse import quote_plus
 import google.generativeai as genai
 from dotenv import load_dotenv
 
@@ -33,13 +34,37 @@ else:
     print("   .env 파일에 API 키를 설정해주세요.")
     sys.exit(1)
 
-# 기본 뉴스 검색 키워드
+# 기본 뉴스 검색 키워드 (다양한 소스 포함)
 DEFAULT_SEARCH_KEYWORDS = [
-    "web accessibility WCAG",
-    "digital accessibility standards",
-    "ARIA accessibility",
+    # 국제 표준 및 가이드라인
+    "WCAG accessibility",
+    "W3C accessibility",
+    "ARIA web accessibility",
+    
+    # 한국어 키워드
     "웹 접근성",
     "디지털 접근성",
+    "장애인 웹접근성",
+    
+    # AI 및 신기술
+    "AI accessibility",
+    "인공지능 접근성",
+    "chatGPT accessibility",
+    
+    # 플랫폼 및 기술
+    "screen reader",
+    "VoiceOver accessibility",
+    "모바일 접근성",
+    
+    # 법규 및 정책
+    "accessibility compliance",
+    "접근성 법규",
+    "장애인차별금지법",
+    
+    # 실무 및 개발
+    "accessible design",
+    "inclusive design",
+    "접근성 개발",
 ]
 
 
@@ -56,8 +81,11 @@ def fetch_google_news(query: str, num_results: int = 10) -> List[Dict]:
     """
     print(f"🔍 검색 중: '{query}'")
     
+    # URL 인코딩 (공백 등 특수문자 처리)
+    encoded_query = quote_plus(query)
+    
     # Google News RSS URL
-    rss_url = f"https://news.google.com/rss/search?q={query}&hl=ko&gl=KR&ceid=KR:ko"
+    rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
     
     try:
         feed = feedparser.parse(rss_url)
@@ -106,7 +134,7 @@ def collect_all_news(custom_keywords: List[str] = None) -> List[Dict]:
     all_articles = []
     
     for keyword in keywords:
-        articles = fetch_google_news(keyword, num_results=5)
+        articles = fetch_google_news(keyword, num_results=8)  # 키워드당 8개로 증가
         all_articles.extend(articles)
     
     # 중복 제거 (URL 기준)
