@@ -68,7 +68,7 @@ python scripts/test_collection.py
 crontab -e
 
 # 매주 월요일 오전 9시 실행 (아래 라인 추가)
-0 9 * * 1 cd /path/to/kakao-a11y-news && /usr/bin/python3 scripts/collect_news.py
+0 9 * * 1 cd /path/to/a11y-news && /usr/bin/python3 scripts/collect_news.py
 ```
 
 ### Windows - 작업 스케줄러

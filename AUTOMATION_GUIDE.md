@@ -116,7 +116,7 @@ crontab -e
 다음 라인 추가:
 
 ```
-0 9 * * * cd /path/to/kakao-a11y-news && /usr/bin/python3 scripts/collect_news.py
+0 9 * * * cd /path/to/a11y-news && /usr/bin/python3 scripts/collect_news.py
 ```
 
 ### 2. GitHub Actions (CI/CD)
