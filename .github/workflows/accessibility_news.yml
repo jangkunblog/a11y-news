@@ -59,31 +59,25 @@ jobs:
       - name: Collect accessibility news
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          CUSTOM_KEYWORDS: ${{ github.event.inputs.keywords }}
+          CUSTOM_PROMPT: ${{ github.event.inputs.custom_prompt }}
         run: |
-          # 키워드 파라미터 준비
-          KEYWORDS_ARG=""
-          if [ -n "${{ github.event.inputs.keywords }}" ]; then
-            # 쉼표로 구분된 키워드를 공백으로 변환
-            KEYWORDS=$(echo "${{ github.event.inputs.keywords }}" | sed 's/,/ /g')
-            KEYWORDS_ARG="--keywords $KEYWORDS"
-          fi
-          
-          # 커스텀 프롬프트 파라미터 준비
-          PROMPT_ARG=""
-          if [ -n "${{ github.event.inputs.custom_prompt }}" ]; then
-            PROMPT_ARG="--custom-prompt \"${{ github.event.inputs.custom_prompt }}\""
-          fi
-          
-          # 스크립트 실행
           echo "🚀 뉴스 수집 시작..."
-          if [ -n "$KEYWORDS_ARG" ]; then
-            echo "🎯 커스텀 키워드: ${{ github.event.inputs.keywords }}"
-          fi
-          if [ -n "$PROMPT_ARG" ]; then
-            echo "📝 커스텀 프롬프트 적용"
-          fi
           
-          python scripts/collect_news.py $KEYWORDS_ARG $PROMPT_ARG
+          # Python 스크립트 실행 (환경변수로 전달하지 않고 직접 인자로)
+          if [ -n "$CUSTOM_KEYWORDS" ] && [ -n "$CUSTOM_PROMPT" ]; then
+            echo "🎯 커스텀 키워드: $CUSTOM_KEYWORDS"
+            echo "📝 커스텀 프롬프트 적용"
+            python scripts/collect_news.py --keywords $CUSTOM_KEYWORDS --custom-prompt "$CUSTOM_PROMPT"
+          elif [ -n "$CUSTOM_KEYWORDS" ]; then
+            echo "🎯 커스텀 키워드: $CUSTOM_KEYWORDS"
+            python scripts/collect_news.py --keywords $CUSTOM_KEYWORDS
+          elif [ -n "$CUSTOM_PROMPT" ]; then
+            echo "📝 커스텀 프롬프트 적용"
+            python scripts/collect_news.py --custom-prompt "$CUSTOM_PROMPT"
+          else
+            python scripts/collect_news.py
+          fi
       
       - name: Check for changes
         id: check_changes
