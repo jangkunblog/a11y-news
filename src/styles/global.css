@@ -32,22 +32,8 @@
 .skip-link:focus {
 	top: 0;
 }
-@font-face {
-	font-family: "Atkinson";
-	src: url("/fonts/atkinson-regular.woff") format("woff");
-	font-weight: 400;
-	font-style: normal;
-	font-display: swap;
-}
-@font-face {
-	font-family: "Atkinson";
-	src: url("/fonts/atkinson-bold.woff") format("woff");
-	font-weight: 700;
-	font-style: normal;
-	font-display: swap;
-}
 body {
-	font-family: "Atkinson", sans-serif;
+	font-family: 'IBM Plex Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 	margin: 0;
 	padding: 0;
 	text-align: left;
@@ -74,6 +60,7 @@ h6 {
 	margin: 0 0 0.5rem 0;
 	color: rgb(var(--black));
 	line-height: 1.2;
+	font-weight: 600;
 }
 h1 {
 	font-size: 3.052em;
@@ -89,6 +76,211 @@ h4 {
 }
 h5 {
 	font-size: 1.25em;
+}
+
+/* 블로그 게시물 콘텐츠 스타일링 */
+.prose h2,
+.prose h3,
+.prose h4,
+.prose h5,
+.prose h6 {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 0.5em;
+}
+
+/* 접근성 아이콘 */
+.prose h2::before,
+.prose h3::before,
+.prose h4::before,
+.prose h5::before,
+.prose h6::before {
+	content: '';
+	flex-shrink: 0;
+	display: inline-block;
+	width: 1em;
+	height: 1em;
+	background-size: contain;
+	background-repeat: no-repeat;
+	background-position: center;
+}
+
+/* h2: 접근성 메인 아이콘 (유니버설 디자인) */
+.prose h2::before {
+	content: '♿';
+	background: none;
+	font-style: normal;
+}
+
+/* h3: 눈 아이콘 (시각 접근성) */
+.prose h3::before {
+	content: '👁️';
+	background: none;
+	font-style: normal;
+}
+
+/* h4: 손 아이콘 (키보드/터치 접근성) */
+.prose h4::before {
+	content: '✋';
+	background: none;
+	font-style: normal;
+}
+
+/* h5: 체크 아이콘 (준수사항) */
+.prose h5::before {
+	content: '✓';
+	background: none;
+	font-style: normal;
+	font-weight: bold;
+}
+
+/* h6: 별 아이콘 (중요 포인트) */
+.prose h6::before {
+	content: '★';
+	background: none;
+	font-style: normal;
+}
+
+/* 레벨별 상단 패딩 */
+.prose h2 {
+	padding-top: 3rem;
+	margin-top: 2rem;
+	border-top: 2px solid rgb(var(--gray-light));
+}
+
+.prose h3 {
+	padding-top: 2.5rem;
+	margin-top: 1.5rem;
+}
+
+.prose h4 {
+	padding-top: 2rem;
+	margin-top: 1.2rem;
+}
+
+.prose h5 {
+	padding-top: 1.5rem;
+	margin-top: 1rem;
+}
+
+.prose h6 {
+	padding-top: 1.2rem;
+	margin-top: 0.8rem;
+}
+
+/* 레벨별 들여쓰기 */
+.prose h2 {
+	padding-left: 0;
+}
+
+.prose h3 {
+	padding-left: 1.5rem;
+}
+
+.prose h4 {
+	padding-left: 3rem;
+}
+
+.prose h5 {
+	padding-left: 4.5rem;
+}
+
+.prose h6 {
+	padding-left: 6rem;
+}
+
+/* h2 다음 콘텐츠는 들여쓰기 없음 */
+.prose h2 + p,
+.prose h2 + ul,
+.prose h2 + ol,
+.prose h2 + blockquote,
+.prose h2 + pre {
+	padding-left: 0;
+}
+
+/* h3 다음 콘텐츠 들여쓰기 */
+.prose h3 + p,
+.prose h3 + ul,
+.prose h3 + ol,
+.prose h3 + blockquote,
+.prose h3 + pre,
+.prose h3 ~ p:not(h2 ~ p):not(h4 ~ p):not(h5 ~ p):not(h6 ~ p),
+.prose h3 ~ ul:not(h2 ~ ul):not(h4 ~ ul):not(h5 ~ ul):not(h6 ~ ul),
+.prose h3 ~ ol:not(h2 ~ ol):not(h4 ~ ol):not(h5 ~ ol):not(h6 ~ ol) {
+	padding-left: 1.5rem;
+}
+
+/* h4 다음 콘텐츠 들여쓰기 */
+.prose h4 + p,
+.prose h4 + ul,
+.prose h4 + ol,
+.prose h4 + blockquote,
+.prose h4 + pre,
+.prose h4 ~ p:not(h2 ~ p):not(h3 ~ p):not(h5 ~ p):not(h6 ~ p),
+.prose h4 ~ ul:not(h2 ~ ul):not(h3 ~ ul):not(h5 ~ ul):not(h6 ~ ul),
+.prose h4 ~ ol:not(h2 ~ ol):not(h3 ~ ol):not(h5 ~ ol):not(h6 ~ ol) {
+	padding-left: 3rem;
+}
+
+/* h5 다음 콘텐츠 들여쓰기 */
+.prose h5 + p,
+.prose h5 + ul,
+.prose h5 + ol,
+.prose h5 + blockquote,
+.prose h5 + pre,
+.prose h5 ~ p:not(h2 ~ p):not(h3 ~ p):not(h4 ~ p):not(h6 ~ p),
+.prose h5 ~ ul:not(h2 ~ ul):not(h3 ~ ul):not(h4 ~ ul):not(h6 ~ ul),
+.prose h5 ~ ol:not(h2 ~ ol):not(h3 ~ ol):not(h4 ~ ol):not(h6 ~ ol) {
+	padding-left: 4.5rem;
+}
+
+/* h6 다음 콘텐츠 들여쓰기 */
+.prose h6 + p,
+.prose h6 + ul,
+.prose h6 + ol,
+.prose h6 + blockquote,
+.prose h6 + pre,
+.prose h6 ~ p:not(h2 ~ p):not(h3 ~ p):not(h4 ~ p):not(h5 ~ p),
+.prose h6 ~ ul:not(h2 ~ ul):not(h3 ~ ul):not(h4 ~ ul):not(h5 ~ ul),
+.prose h6 ~ ol:not(h2 ~ ol):not(h3 ~ ol):not(h4 ~ ol):not(h5 ~ ol) {
+	padding-left: 6rem;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 720px) {
+	.prose h3 { padding-left: 1rem; }
+	.prose h4 { padding-left: 2rem; }
+	.prose h5 { padding-left: 3rem; }
+	.prose h6 { padding-left: 4rem; }
+	
+	.prose h3 + p, .prose h3 + ul, .prose h3 + ol,
+	.prose h3 ~ p:not(h2 ~ p):not(h4 ~ p):not(h5 ~ p):not(h6 ~ p),
+	.prose h3 ~ ul:not(h2 ~ ul):not(h4 ~ ul):not(h5 ~ ul):not(h6 ~ ul),
+	.prose h3 ~ ol:not(h2 ~ ol):not(h4 ~ ol):not(h5 ~ ol):not(h6 ~ ol) {
+		padding-left: 1rem;
+	}
+	
+	.prose h4 + p, .prose h4 + ul, .prose h4 + ol,
+	.prose h4 ~ p:not(h2 ~ p):not(h3 ~ p):not(h5 ~ p):not(h6 ~ p),
+	.prose h4 ~ ul:not(h2 ~ ul):not(h3 ~ ul):not(h5 ~ ul):not(h6 ~ ul),
+	.prose h4 ~ ol:not(h2 ~ ol):not(h3 ~ ol):not(h5 ~ ol):not(h6 ~ ol) {
+		padding-left: 2rem;
+	}
+	
+	.prose h5 + p, .prose h5 + ul, .prose h5 + ol,
+	.prose h5 ~ p:not(h2 ~ p):not(h3 ~ p):not(h4 ~ p):not(h6 ~ p),
+	.prose h5 ~ ul:not(h2 ~ ul):not(h3 ~ ul):not(h4 ~ ul):not(h6 ~ ul),
+	.prose h5 ~ ol:not(h2 ~ ol):not(h3 ~ ol):not(h4 ~ ol):not(h6 ~ ol) {
+		padding-left: 3rem;
+	}
+	
+	.prose h6 + p, .prose h6 + ul, .prose h6 + ol,
+	.prose h6 ~ p:not(h2 ~ p):not(h3 ~ p):not(h4 ~ p):not(h5 ~ p),
+	.prose h6 ~ ul:not(h2 ~ ul):not(h3 ~ ul):not(h4 ~ ul):not(h5 ~ ul),
+	.prose h6 ~ ol:not(h2 ~ ol):not(h3 ~ ol):not(h4 ~ ol):not(h5 ~ ol) {
+		padding-left: 4rem;
+	}
 }
 strong,
 b {
