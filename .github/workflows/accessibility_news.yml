@@ -105,12 +105,23 @@ jobs:
           # 브랜치 이름 생성
           BRANCH_NAME="news/${TODAY}"
           
-          # 새 브랜치 생성 및 체크아웃
-          git checkout -b ${BRANCH_NAME}
-          
           # Git 설정
           git config --local user.name "github-actions[bot]"
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 생성된 파일을 임시 저장
+          mkdir -p /tmp/news-backup
+          cp -r src/content/blog/a11y-news-*.md /tmp/news-backup/ 2>/dev/null || true
+          
+          # 최신 main 브랜치 가져오기
+          git fetch origin main
+          git reset --hard origin/main
+          
+          # 임시 저장한 파일 복원
+          cp -r /tmp/news-backup/* src/content/blog/ 2>/dev/null || true
+          
+          # 새 브랜치 생성 및 체크아웃
+          git checkout -b ${BRANCH_NAME}
           
           # 커스텀 키워드 정보 추가
           KEYWORDS_INFO=""
@@ -130,8 +141,8 @@ jobs:
           - 수집 방식: ${{ github.event_name }}
           - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
-          # 브랜치 푸시
-          git push origin ${BRANCH_NAME}
+          # 브랜치 푸시 (upstream 설정)
+          git push -u origin ${BRANCH_NAME}
           
           echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
           echo ""
