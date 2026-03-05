@@ -99,11 +99,18 @@ jobs:
       - name: Commit and push changes
         if: steps.check_changes.outputs.has_changes == 'true'
         run: |
-          git config --local user.name "github-actions[bot]"
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          
           # 현재 날짜
           TODAY=$(date +%Y-%m-%d)
+          
+          # 브랜치 이름 생성
+          BRANCH_NAME="news/${TODAY}"
+          
+          # 새 브랜치 생성 및 체크아웃
+          git checkout -b ${BRANCH_NAME}
+          
+          # Git 설정
+          git config --local user.name "github-actions[bot]"
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
           
           # 커스텀 키워드 정보 추가
           KEYWORDS_INFO=""
@@ -123,12 +130,70 @@ jobs:
           - 수집 방식: ${{ github.event_name }}
           - Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           
-          # 푸시
-          git push
+          # 브랜치 푸시
+          git push origin ${BRANCH_NAME}
+          
+          echo "branch_name=${BRANCH_NAME}" >> $GITHUB_OUTPUT
+          echo ""
+          echo "✅ 브랜치가 생성되고 푸시되었습니다!"
+          echo "📄 파일: ${{ steps.check_file.outputs.file_path }}"
+        id: commit_changes
+      
+      - name: Create Pull Request
+        if: steps.check_changes.outputs.has_changes == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TODAY=$(date +%Y-%m-%d)
+          BRANCH_NAME="${{ steps.commit_changes.outputs.branch_name }}"
+          
+          # 키워드 정보
+          KEYWORDS_INFO=""
+          if [ -n "${{ github.event.inputs.keywords }}" ]; then
+            KEYWORDS_INFO="
+            
+            🎯 **검색 키워드**: ${{ github.event.inputs.keywords }}"
+          fi
+          
+          # 커스텀 프롬프트 정보
+          PROMPT_INFO=""
+          if [ -n "${{ github.event.inputs.custom_prompt }}" ]; then
+            PROMPT_INFO="
+            
+            📝 **커스텀 프롬프트**: ${{ github.event.inputs.custom_prompt }}"
+          fi
+          
+          # PR 생성
+          gh pr create \
+            --title "📰 디지털 접근성 뉴스 - ${TODAY}" \
+            --body "## 🤖 자동 생성된 뉴스 게시물
+            
+            매주 자동으로 수집된 디지털 접근성 관련 뉴스입니다.
+            
+            ### 📋 세부 정보
+            - 📅 **수집 일시**: ${TODAY}
+            - 🔧 **실행 방식**: ${{ github.event_name }}
+            - 📄 **파일**: \`${{ steps.check_file.outputs.file_path }}\`${KEYWORDS_INFO}${PROMPT_INFO}
+            
+            ### ✅ 검토 사항
+            - [ ] 뉴스 내용이 정확하고 적절한가?
+            - [ ] 출처 링크가 모두 포함되어 있는가?
+            - [ ] 요약과 결론이 명확한가?
+            - [ ] 오타나 문법 오류가 없는가?
+            
+            ### 🚀 다음 단계
+            1. 게시물 내용을 검토하세요
+            2. 필요시 직접 수정하세요 (브랜치: \`${BRANCH_NAME}\`)
+            3. 문제없으면 **Merge**하여 블로그에 발행하세요
+            
+            ---
+            
+            💡 Merge 시 자동으로 Netlify에 배포됩니다." \
+            --base main \
+            --head ${BRANCH_NAME}
           
           echo ""
-          echo "✅ 변경사항이 커밋되고 푸시되었습니다!"
-          echo "📄 파일: ${{ steps.check_file.outputs.file_path }}"
+          echo "✅ Pull Request가 생성되었습니다!"
       
       - name: Summary
         if: always()
@@ -137,8 +202,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           
           if [ "${{ steps.check_changes.outputs.has_changes }}" == "true" ]; then
-            echo "✅ **상태**: 새 게시물 생성 및 커밋 완료" >> $GITHUB_STEP_SUMMARY
+            echo "✅ **상태**: Pull Request 생성 완료" >> $GITHUB_STEP_SUMMARY
             echo "📄 **파일**: \`${{ steps.check_file.outputs.file_path }}\`" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "🔍 **다음 단계**: [Pull Requests 탭](https://github.com/${{ github.repository }}/pulls)에서 검토 후 Merge하세요" >> $GITHUB_STEP_SUMMARY
           else
             echo "ℹ️ **상태**: 변경사항 없음" >> $GITHUB_STEP_SUMMARY
           fi
