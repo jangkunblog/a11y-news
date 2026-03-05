@@ -185,12 +185,17 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
 {news_data}
 </뉴스 데이터>
 
+⚠️ 중요: 이 블로그는 "디지털 접근성(Web Accessibility, WCAG, ARIA, 장애인 접근성)" 전문 블로그입니다.
+- 제공된 뉴스 중 접근성과 직접 관련이 없는 내용은 제외하거나 최소화하세요.
+- 일반 기술 뉴스라도 접근성 관점에서 재해석할 수 있는 경우만 포함하세요.
+- 접근성과 무관한 뉴스가 대부분이라면, 관련 항목만 선별하여 작성하세요.
+
 [작성 규칙]
-1. 최상단 섹션: "## Summary" - 전체 뉴스의 핵심만 3~4줄로 요약.
+1. 최상단 섹션: "## Summary" - 디지털 접근성 관점에서 전체 뉴스의 핵심만 3~4줄로 요약.
    - ⚠️ 제목에 이모지를 포함하지 말 것. 단순히 "## Summary"만 사용.
 
-2. 본문 섹션: 제공된 사실만을 바탕으로 대제목(##)/소제목(###)을 나누어 작성.
-   - ⚠️ 제목에 이모지를 포함하지 말 것. (예: ## 주요 뉴스, ## 국내 동향)
+2. 본문 섹션: 제공된 사실 중 접근성 관련 내용만을 바탕으로 대제목(##)/소제목(###)을 나누어 작성.
+   - ⚠️ 제목에 이모지를 포함하지 말 것. (예: ## 접근성 정책 동향, ## 기술 발전)
    - ⚠️ 절대 임의로 사실을 지어내거나 추측하지 말 것.
    - ⚠️ 각 뉴스 항목은 개별 단락(paragraph)으로 작성하고, 항목 끝에 출처를 포함.
    - 형식: 각 뉴스 내용을 하나의 단락으로 작성한 후, 같은 단락 내에서 괄호와 함께 출처 링크 추가.
@@ -201,20 +206,18 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
      첫 번째 뉴스 내용입니다. ([출처: 매체명](URL))
      
      두 번째 뉴스 내용입니다. ([출처: 매체명](URL))
-     
-     세 번째 뉴스 내용입니다. ([출처: 매체명](URL))
      ```
    - 각 뉴스 항목 사이에는 빈 줄을 하나 넣어 명확히 구분할 것.
    - 출처는 반드시 괄호로 감싸서 표기: ([출처: 매체명](URL))
    - code 사용할 경우에는 내용 영역에 적절히 삽입하세요.
-   - 본문 대제목 예시: ## 주요 뉴스, ## 국내 동향, ## 해외 업데이트 등
-   - 본문 소제목 예시: ### WCAG 관련, ### 법규/정책, ### 기술/도구 등
 
-3. 최하단 섹션: "## 결론 및 전략" - 이 뉴스들이 IT/기획/개발 실무자들에게 시사하는 바, 앞으로 준비해야 할 접근성 대응 전략 등을 너의 분석력으로 도출해서 작성.
+3. 최하단 섹션: "## 결론 및 전략" - ⚠️ 이 섹션은 반드시 포함해야 합니다.
    - ⚠️ 제목에 이모지를 포함하지 말 것. 단순히 "## 결론 및 전략"만 사용.
+   - 이 뉴스들이 IT/기획/개발 실무자들에게 시사하는 바를 디지털 접근성 관점에서 분석
    - 실무자 관점에서 핵심 포인트 정리
-   - 향후 대응 전략 및 실행 방안
+   - 향후 접근성 대응 전략 및 실행 방안
    - 주의해야 할 사항이나 변화의 의미
+   - 최소 3개 이상의 실행 가능한 제언 포함
 {additional_instruction}
 <출력 형식>
 - 마크다운 본문만 출력하세요.
@@ -225,19 +228,20 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
 - 뉴스 내용과 출처는 같은 단락 안에 함께 작성하세요.
 - 출처 형식: 반드시 괄호로 감싸서 "([출처: 매체명](URL))" 형태로 작성하세요.
 - 출처 URL은 절대 생략하지 말고 반드시 포함하세요.
+- ⚠️ 필수: "## 결론 및 전략" 섹션을 반드시 마지막에 포함하세요.
 </출력 형식>
 """
     
     try:
-        # Gemini 모델 설정 (2025년 최신 안정 모델 - 2.5 Flash)
-        model = genai.GenerativeModel('gemini-2.5-flash')
+        # Gemini 모델 설정 (2.5 Pro - 더 높은 품질과 정확도)
+        model = genai.GenerativeModel('gemini-2.5-pro')
         
         # 콘텐츠 생성
         response = model.generate_content(
             prompt,
             generation_config=genai.types.GenerationConfig(
                 temperature=0.3,  # 창의성 낮춤 (정확성 우선)
-                max_output_tokens=4000,
+                max_output_tokens=8000,  # 토큰 제한 증가 (결론 섹션 포함)
             )
         )
         
@@ -266,11 +270,12 @@ def create_blog_post(content: str) -> str:
     filename = f"a11y-news-{date_str}-{time_str}.md"
     
     # 프론트매터 생성 (pubDate에 시간 포함하여 정렬)
-    pub_date_full = today.strftime("%b %d %Y %H:%M:%S")
+    # ISO 8601 형식으로 변경하여 Astro가 정확하게 파싱할 수 있도록 함
+    pub_date_iso = today.strftime("%Y-%m-%dT%H:%M:%S")
     frontmatter = f"""---
 title: '디지털 접근성 뉴스 - {today.strftime("%Y년 %m월 %d일 %H:%M")}'
 description: '최신 웹 접근성 및 WCAG 관련 뉴스 모음'
-pubDate: '{pub_date_full}'
+pubDate: '{pub_date_iso}'
 heroImage: '../../assets/blog-placeholder-1.jpg'
 ---
 
