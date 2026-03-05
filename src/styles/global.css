@@ -63,83 +63,43 @@ h6 {
 	font-weight: 600;
 }
 h1 {
-	font-size: 3.052em;
+	font-size: 2.5em;
 }
 h2 {
-	font-size: 2.441em;
+	font-size: 1.8em;
 }
 h3 {
-	font-size: 1.953em;
+	font-size: 1.5em;
 }
 h4 {
-	font-size: 1.563em;
+	font-size: 1.3em;
 }
 h5 {
-	font-size: 1.25em;
+	font-size: 1.15em;
+}
+h6 {
+	font-size: 1.05em;
 }
 
 /* 블로그 게시물 콘텐츠 스타일링 */
-.prose h2,
-.prose h3,
-.prose h4,
-.prose h5,
-.prose h6 {
+.prose h2 {
 	position: relative;
 	display: flex;
 	align-items: center;
 	gap: 0.5em;
 }
 
-/* 접근성 아이콘 */
-.prose h2::before,
-.prose h3::before,
-.prose h4::before,
-.prose h5::before,
-.prose h6::before {
+/* h2 아이콘 (이미지) */
+.prose h2::before {
 	content: '';
 	flex-shrink: 0;
 	display: inline-block;
 	width: 1em;
 	height: 1em;
+	background-image: url('/heading-icon.png');
 	background-size: contain;
 	background-repeat: no-repeat;
 	background-position: center;
-}
-
-/* h2: 접근성 메인 아이콘 (유니버설 디자인) */
-.prose h2::before {
-	content: '♿';
-	background: none;
-	font-style: normal;
-}
-
-/* h3: 눈 아이콘 (시각 접근성) */
-.prose h3::before {
-	content: '👁️';
-	background: none;
-	font-style: normal;
-}
-
-/* h4: 손 아이콘 (키보드/터치 접근성) */
-.prose h4::before {
-	content: '✋';
-	background: none;
-	font-style: normal;
-}
-
-/* h5: 체크 아이콘 (준수사항) */
-.prose h5::before {
-	content: '✓';
-	background: none;
-	font-style: normal;
-	font-weight: bold;
-}
-
-/* h6: 별 아이콘 (중요 포인트) */
-.prose h6::before {
-	content: '★';
-	background: none;
-	font-style: normal;
 }
 
 /* 레벨별 상단 패딩 */
@@ -190,7 +150,7 @@ h5 {
 	padding-left: 6rem;
 }
 
-/* h2 다음 콘텐츠는 들여쓰기 없음 */
+/* h2 다음 콘텐츠는 기본 들여쓰기 없음 */
 .prose h2 + p,
 .prose h2 + ul,
 .prose h2 + ol,
@@ -253,6 +213,10 @@ h5 {
 	.prose h4 { padding-left: 2rem; }
 	.prose h5 { padding-left: 3rem; }
 	.prose h6 { padding-left: 4rem; }
+	
+	.prose h2 + p, .prose h2 + ul, .prose h2 + ol {
+		padding-left: 0;
+	}
 	
 	.prose h3 + p, .prose h3 + ul, .prose h3 + ol,
 	.prose h3 ~ p:not(h2 ~ p):not(h4 ~ p):not(h5 ~ p):not(h6 ~ p),
