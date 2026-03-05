@@ -9,6 +9,7 @@ Gemini API를 사용하여 요약 및 구조화된 마크다운 파일을 생성
 import os
 import sys
 import json
+import argparse
 import requests
 import feedparser
 from datetime import datetime
@@ -32,8 +33,8 @@ else:
     print("   .env 파일에 API 키를 설정해주세요.")
     sys.exit(1)
 
-# 뉴스 검색 키워드
-SEARCH_KEYWORDS = [
+# 기본 뉴스 검색 키워드
+DEFAULT_SEARCH_KEYWORDS = [
     "web accessibility WCAG",
     "digital accessibility standards",
     "ARIA accessibility",
@@ -79,9 +80,12 @@ def fetch_google_news(query: str, num_results: int = 10) -> List[Dict]:
         return []
 
 
-def collect_all_news() -> List[Dict]:
+def collect_all_news(custom_keywords: List[str] = None) -> List[Dict]:
     """
     모든 키워드에 대해 뉴스 수집
+    
+    Args:
+        custom_keywords: 커스텀 검색 키워드 리스트 (None이면 기본 키워드 사용)
     
     Returns:
         전체 뉴스 아이템 리스트
@@ -90,9 +94,18 @@ def collect_all_news() -> List[Dict]:
     print("📰 디지털 접근성 뉴스 수집 시작")
     print("="*60 + "\n")
     
+    # 키워드 선택
+    keywords = custom_keywords if custom_keywords else DEFAULT_SEARCH_KEYWORDS
+    
+    if custom_keywords:
+        print(f"🎯 커스텀 키워드 사용: {len(keywords)}개")
+    else:
+        print(f"🔍 기본 키워드 사용: {len(keywords)}개")
+    print()
+    
     all_articles = []
     
-    for keyword in SEARCH_KEYWORDS:
+    for keyword in keywords:
         articles = fetch_google_news(keyword, num_results=5)
         all_articles.extend(articles)
     
@@ -108,12 +121,13 @@ def collect_all_news() -> List[Dict]:
     return unique_articles
 
 
-def generate_markdown_with_gemini(articles: List[Dict]) -> str:
+def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = None) -> str:
     """
     Gemini API를 사용하여 뉴스를 요약하고 마크다운으로 변환
     
     Args:
         articles: 뉴스 아이템 리스트
+        custom_prompt: 추가 커스텀 프롬프트 (옵션)
         
     Returns:
         마크다운 형식의 문자열
@@ -122,6 +136,12 @@ def generate_markdown_with_gemini(articles: List[Dict]) -> str:
     
     # 뉴스 데이터를 JSON 형식으로 준비
     news_data = json.dumps(articles, ensure_ascii=False, indent=2)
+    
+    # 커스텀 프롬프트 추가
+    additional_instruction = ""
+    if custom_prompt:
+        additional_instruction = f"\n\n<추가 지시사항>\n{custom_prompt}\n</추가 지시사항>\n"
+        print(f"📝 커스텀 프롬프트 적용: {custom_prompt[:50]}...\n")
     
     # Gemini에 전달할 프롬프트 (규칙 하드코딩)
     prompt = f"""
@@ -154,7 +174,7 @@ def generate_markdown_with_gemini(articles: List[Dict]) -> str:
 5. 모든 제목과 내용은 한국어로 작성하세요.
 
 6. 출처 URL은 절대 생략하지 말고 반드시 포함하세요.
-
+{additional_instruction}
 <출력 형식>
 마크다운 본문만 출력하세요. 프론트매터(---)는 제외하고 본문만 작성하세요.
 </출력 형식>
@@ -221,20 +241,38 @@ heroImage: '../../assets/blog-placeholder-1.jpg'
 
 def main():
     """메인 함수"""
+    # 커맨드라인 인자 파싱
+    parser = argparse.ArgumentParser(
+        description='디지털 접근성 뉴스를 자동으로 수집하고 블로그 게시물을 생성합니다.'
+    )
+    parser.add_argument(
+        '--keywords',
+        nargs='+',
+        help='검색할 키워드 (여러 개 가능). 예: --keywords "WCAG 3.0" "ARIA updates"'
+    )
+    parser.add_argument(
+        '--custom-prompt',
+        type=str,
+        help='Gemini에 추가로 전달할 커스텀 프롬프트'
+    )
+    
+    args = parser.parse_args()
+    
     print("\n" + "🌐 " * 20)
     print("   디지털 접근성 뉴스 자동 수집기")
     print("🌐 " * 20 + "\n")
     
     try:
         # 1. 뉴스 수집
-        articles = collect_all_news()
+        custom_keywords = args.keywords if args.keywords else None
+        articles = collect_all_news(custom_keywords)
         
         if not articles:
             print("⚠️  수집된 뉴스가 없습니다.")
             return
         
         # 2. Gemini로 콘텐츠 생성
-        markdown_content = generate_markdown_with_gemini(articles)
+        markdown_content = generate_markdown_with_gemini(articles, args.custom_prompt)
         
         # 3. 마크다운 파일 생성
         file_path = create_blog_post(markdown_content)
@@ -245,6 +283,8 @@ def main():
         print("="*60)
         print(f"📄 파일 위치: {file_path}")
         print(f"📊 수집된 뉴스: {len(articles)}개")
+        if args.keywords:
+            print(f"🎯 커스텀 키워드: {', '.join(args.keywords)}")
         print(f"📅 생성 일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
         print("\n💡 Astro 개발 서버에서 자동으로 반영됩니다.")
         print("   브라우저를 새로고침하여 확인하세요!\n")

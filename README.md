@@ -38,9 +38,11 @@ heroImage: '../../assets/your-image.jpg'
 
 ## 🤖 자동 뉴스 수집
 
+### 로컬 실행
+
 Python 스크립트를 사용하여 디지털 접근성 관련 뉴스를 자동으로 수집하고 블로그 게시물을 생성할 수 있습니다.
 
-### 설정 방법
+#### 설정 방법
 
 1. Python 의존성 설치:
 ```bash
@@ -56,9 +58,35 @@ cp .env.example .env
 3. 스크립트 실행:
 ```bash
 python scripts/collect_news.py
+
+# 또는 커스텀 키워드로 실행
+python scripts/collect_news.py --keywords "WCAG 3.0" "ARIA updates"
 ```
 
-자세한 사용법은 [AUTOMATION_GUIDE.md](./AUTOMATION_GUIDE.md)를 참고하세요.
+자세한 사용법은 [QUICKSTART.md](./QUICKSTART.md)를 참고하세요.
+
+### GitHub Actions 자동화 ⭐
+
+**매주 월요일 오전 9시(KST)**에 자동으로 뉴스를 수집하고 커밋합니다!
+
+#### 설정 방법
+
+1. [Google AI Studio](https://aistudio.google.com/app/apikey)에서 Gemini API 키 발급
+2. GitHub 저장소 Settings > Secrets and variables > Actions
+3. New repository secret:
+   - Name: `GEMINI_API_KEY`
+   - Secret: 발급받은 API 키
+4. Settings > Actions > General > Workflow permissions
+   - "Read and write permissions" 선택
+
+#### 수동 실행
+
+GitHub 저장소 > **Actions** 탭 > **"Collect Accessibility News"** > **Run workflow**
+
+- 검색 키워드 커스터마이징 가능
+- Gemini에 추가 지시사항 전달 가능
+
+자세한 내용은 [GITHUB_ACTIONS_GUIDE.md](./GITHUB_ACTIONS_GUIDE.md)를 참고하세요.
 
 ## 🧞 명령어
 
