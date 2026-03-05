@@ -7,9 +7,27 @@ import FormattedDate from '../../components/FormattedDate.astro';
 import Header from '../../components/Header.astro';
 import { SITE_DESCRIPTION, SITE_TITLE } from '../../consts';
 
-const posts = (await getCollection('blog')).sort(
+const allPosts = (await getCollection('blog')).sort(
 	(a, b) => b.data.pubDate.valueOf() - a.data.pubDate.valueOf(),
 );
+
+// Summary 섹션 추출 함수
+function extractSummary(body: string): string {
+	// ## Summary 다음부터 다음 ## 제목 전까지의 내용 추출
+	const summaryMatch = body.match(/## Summary\s*\n\n([\s\S]*?)(?=\n\n##|$)/);
+	if (summaryMatch && summaryMatch[1]) {
+		return summaryMatch[1].trim();
+	}
+	// Summary가 없으면 첫 번째 단락 반환
+	const firstParagraph = body.split('\n\n').find(p => p.trim() && !p.startsWith('#'));
+	return firstParagraph?.trim() || '';
+}
+
+// 각 게시물의 summary 추출
+const posts = allPosts.map(post => ({
+	...post,
+	summary: extractSummary(post.body)
+}));
 ---
 
 <!doctype html>
@@ -81,7 +99,7 @@ const posts = (await getCollection('blog')).sort(
 								<p class="post-date">
 									<FormattedDate date={post.data.pubDate} />
 								</p>
-								<p class="post-description">{post.data.description}</p>
+								<p class="post-description">{post.summary}</p>
 							</li>
 						))
 					}
