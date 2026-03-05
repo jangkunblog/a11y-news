@@ -6,8 +6,7 @@ import { defineConfig } from 'astro/config';
 
 // https://astro.build/config
 export default defineConfig({
-	site: 'https://jangkunblog.github.io',
-	// GitHub Pages 배포 시 주석 해제
-	base: '/a11y-news',
+	// Netlify 배포 시에는 base 경로 불필요
+	site: 'https://your-site-name.netlify.app', // Netlify 배포 후 실제 URL로 변경
 	integrations: [mdx(), sitemap()],
 });
