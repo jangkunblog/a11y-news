@@ -203,8 +203,8 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
 """
     
     try:
-        # Gemini 모델 설정 (안정적인 프로덕션 모델)
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        # Gemini 모델 설정 (기본 안정 모델)
+        model = genai.GenerativeModel('gemini-pro')
         
         # 콘텐츠 생성
         response = model.generate_content(

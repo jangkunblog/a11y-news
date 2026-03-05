@@ -1,7 +1,7 @@
 # Python 의존성 (Python 3.11 호환)
 
-# Google Gemini API
-google-generativeai==0.8.6
+# Google Gemini API (최신 버전)
+google-generativeai>=0.8.6
 
 # RSS 파싱
 feedparser==6.0.11
