@@ -39,21 +39,26 @@ DEFAULT_SEARCH_KEYWORDS = [
     # 국제 표준 및 가이드라인
     "WCAG accessibility",
     "W3C accessibility",
-    "ARIA web accessibility",
+    "ARIA accessibility",
+    "mobile accessibility",
+    "Google accessibility",
+    "Apple accessibility",
     
     # 한국어 키워드
+    "접근성",
     "웹 접근성",
     "디지털 접근성",
-    "장애인 웹접근성",
+    "장애인 접근성",
     
     # AI 및 신기술
     "AI accessibility",
     "인공지능 접근성",
-    "chatGPT accessibility",
+    "robot accessibility",
     
     # 플랫폼 및 기술
     "screen reader",
     "VoiceOver accessibility",
+    "TalkBack accessibility",
     "모바일 접근성",
     
     # 법규 및 정책
@@ -188,11 +193,12 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
    - ⚠️ 제목에 이모지를 포함하지 말 것. (예: ## 주요 뉴스, ## 국내 동향)
    - ⚠️ 절대 임의로 사실을 지어내거나 추측하지 말 것.
    - ⚠️ 각 뉴스 항목의 끝에 반드시 출처를 별도 줄바꿈하여 [출처: 매체명](URL) 형식으로 작성.
-   - 출처는 항목 설명과 분리하여 한 줄 띄운 후 작성할 것.
+   - 출처는 항목 설명과 분리하여 한 줄 띄운 후 작성할 것. (예: <h2>대제목</h2><h3>소제목</h3><p>내용 1 /n 출처 1</p><p>내용 2 /n 출처 2</p>)
+   - code 사용할 경우에는 위 '내용' 영역에 적절히 삽입하세요.
    - 본문 대제목 예시: ## 주요 뉴스, ## 국내 동향, ## 해외 업데이트 등
    - 본문 소제목 예시: ### WCAG 관련, ### 법규/정책, ### 기술/도구 등
 
-3. 최하단 섹션: "## Conclusion" - 이 뉴스들이 IT/기획/개발 실무자들에게 시사하는 바, 앞으로 준비해야 할 접근성 대응 전략 등을 너의 분석력으로 도출해서 작성.
+3. 최하단 섹션: "## 결론 및 전략" - 이 뉴스들이 IT/기획/개발 실무자들에게 시사하는 바, 앞으로 준비해야 할 접근성 대응 전략 등을 너의 분석력으로 도출해서 작성.
    - ⚠️ 제목에 이모지를 포함하지 말 것. 단순히 "## Conclusion"만 사용.
    - 실무자 관점에서 핵심 포인트 정리
    - 향후 대응 전략 및 실행 방안
@@ -201,7 +207,7 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
 <출력 형식>
 - 마크다운 본문만 출력하세요.
 - 프론트매터(---)는 제외하고 본문만 작성하세요.
-- 모든 내용은 한국어로 작성하세요.
+- 모든 내용은 한국어를 기반으로 작성하세요.
 - 제목(##, ###)에는 절대 이모지를 사용하지 마세요.
 - 각 뉴스 내용과 출처 사이에는 반드시 줄바꿈을 하세요.
 - 출처 URL은 절대 생략하지 말고 반드시 포함하세요.
