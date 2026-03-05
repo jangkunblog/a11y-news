@@ -59,25 +59,30 @@ jobs:
       - name: Collect accessibility news
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          CUSTOM_KEYWORDS: ${{ github.event.inputs.keywords }}
-          CUSTOM_PROMPT: ${{ github.event.inputs.custom_prompt }}
         run: |
           echo "🚀 뉴스 수집 시작..."
           
-          # Python 스크립트 실행 (환경변수로 전달하지 않고 직접 인자로)
-          if [ -n "$CUSTOM_KEYWORDS" ] && [ -n "$CUSTOM_PROMPT" ]; then
-            echo "🎯 커스텀 키워드: $CUSTOM_KEYWORDS"
-            echo "📝 커스텀 프롬프트 적용"
-            python scripts/collect_news.py --keywords $CUSTOM_KEYWORDS --custom-prompt "$CUSTOM_PROMPT"
-          elif [ -n "$CUSTOM_KEYWORDS" ]; then
-            echo "🎯 커스텀 키워드: $CUSTOM_KEYWORDS"
-            python scripts/collect_news.py --keywords $CUSTOM_KEYWORDS
-          elif [ -n "$CUSTOM_PROMPT" ]; then
-            echo "📝 커스텀 프롬프트 적용"
-            python scripts/collect_news.py --custom-prompt "$CUSTOM_PROMPT"
-          else
-            python scripts/collect_news.py
+          # 키워드 처리 (쉼표를 공백으로 변환)
+          KEYWORDS="${{ github.event.inputs.keywords }}"
+          CUSTOM_PROMPT="${{ github.event.inputs.custom_prompt }}"
+          
+          # Python 명령어 구성
+          CMD="python scripts/collect_news.py"
+          
+          if [ -n "$KEYWORDS" ]; then
+            echo "🎯 커스텀 키워드: $KEYWORDS"
+            # 쉼표를 공백으로 변환하고 각 키워드를 개별 인자로 전달
+            KEYWORDS_CLEANED=$(echo "$KEYWORDS" | sed 's/,/ /g' | xargs)
+            CMD="$CMD --keywords $KEYWORDS_CLEANED"
           fi
+          
+          if [ -n "$CUSTOM_PROMPT" ]; then
+            echo "📝 커스텀 프롬프트 적용: $CUSTOM_PROMPT"
+            CMD="$CMD --custom-prompt \"$CUSTOM_PROMPT\""
+          fi
+          
+          echo "실행 명령어: $CMD"
+          eval $CMD
       
       - name: Check for changes
         id: check_changes
