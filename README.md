@@ -36,6 +36,30 @@ heroImage: '../../assets/your-image.jpg'
 
 3. 파일 저장 시 자동으로 블로그에 표시됩니다
 
+## 🤖 자동 뉴스 수집
+
+Python 스크립트를 사용하여 디지털 접근성 관련 뉴스를 자동으로 수집하고 블로그 게시물을 생성할 수 있습니다.
+
+### 설정 방법
+
+1. Python 의존성 설치:
+```bash
+pip install -r requirements.txt
+```
+
+2. Gemini API 키 설정:
+```bash
+cp .env.example .env
+# .env 파일을 열어 GEMINI_API_KEY 입력
+```
+
+3. 스크립트 실행:
+```bash
+python scripts/collect_news.py
+```
+
+자세한 사용법은 [AUTOMATION_GUIDE.md](./AUTOMATION_GUIDE.md)를 참고하세요.
+
 ## 🧞 명령어
 
 프로젝트 루트에서 실행 가능한 명령어:
