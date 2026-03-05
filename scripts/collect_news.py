@@ -233,16 +233,18 @@ def create_blog_post(content: str) -> str:
     Returns:
         생성된 파일 경로
     """
-    # 현재 날짜로 파일명 생성
+    # 현재 날짜와 시간으로 파일명 생성 (동일 날짜 여러 게시물 지원)
     today = datetime.now()
     date_str = today.strftime('%Y-%m-%d')
-    filename = f"a11y-news-{date_str}.md"
+    time_str = today.strftime('%H%M%S')
+    filename = f"a11y-news-{date_str}-{time_str}.md"
     
-    # 프론트매터 생성
+    # 프론트매터 생성 (pubDate에 시간 포함하여 정렬)
+    pub_date_full = today.strftime("%b %d %Y %H:%M:%S")
     frontmatter = f"""---
-title: '디지털 접근성 뉴스 - {today.strftime("%Y년 %m월 %d일")}'
+title: '디지털 접근성 뉴스 - {today.strftime("%Y년 %m월 %d일 %H:%M")}'
 description: '최신 웹 접근성 및 WCAG 관련 뉴스 모음'
-pubDate: '{today.strftime("%b %d %Y")}'
+pubDate: '{pub_date_full}'
 heroImage: '../../assets/blog-placeholder-1.jpg'
 ---
 
