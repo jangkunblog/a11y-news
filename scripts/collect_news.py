@@ -175,8 +175,8 @@ def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = Non
 """
     
     try:
-        # Gemini 모델 설정 (최신 모델 사용)
-        model = genai.GenerativeModel('gemini-2.0-flash-exp')
+        # Gemini 모델 설정 (안정적인 최신 모델 사용)
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         # 콘텐츠 생성
         response = model.generate_content(
