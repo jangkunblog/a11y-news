@@ -13,8 +13,8 @@ const allPosts = (await getCollection('blog')).sort(
 
 // Summary 섹션 추출 함수
 function extractSummary(body: string): string {
-	// ## Summary 다음부터 다음 ## 제목 전까지의 내용 추출
-	const summaryMatch = body.match(/## Summary\s*\n\n([\s\S]*?)(?=\n\n##|$)/);
+	// ## Summary 다음 줄부터 다음 ## 제목 전까지의 내용 추출
+	const summaryMatch = body.match(/## Summary\s*\n([\s\S]*?)(?=\n##|$)/);
 	if (summaryMatch && summaryMatch[1]) {
 		return summaryMatch[1].trim();
 	}
