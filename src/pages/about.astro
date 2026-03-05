@@ -1,0 +1,51 @@
+---
+import AboutHeroImage from '../assets/blog-placeholder-about.jpg';
+import Layout from '../layouts/BlogPost.astro';
+---
+
+<Layout
+	title="소개"
+	description="디지털 접근성 뉴스 블로그에 대한 소개"
+	pubDate={new Date('March 05 2026')}
+	heroImage={AboutHeroImage}
+>
+	<h2>디지털 접근성 뉴스 블로그란?</h2>
+	
+	<p>
+		이 블로그는 디지털 접근성(Digital Accessibility)과 관련된 최신 뉴스, 정책 변화, 
+		기술 발전, 그리고 모범 사례를 체계적으로 수집하고 아카이빙하는 공간입니다.
+	</p>
+
+	<h2>다루는 주제</h2>
+	
+	<ul>
+		<li><strong>웹 접근성 표준</strong>: WCAG, WAI-ARIA 등 국제 표준의 업데이트와 변화</li>
+		<li><strong>국내외 정책</strong>: 접근성 관련 법률, 규정, 가이드라인</li>
+		<li><strong>기술 동향</strong>: 접근성을 향상시키는 새로운 기술과 도구</li>
+		<li><strong>실무 사례</strong>: 기업과 기관의 접근성 개선 사례</li>
+		<li><strong>교육 자료</strong>: 접근성을 배우고 적용하기 위한 리소스</li>
+	</ul>
+
+	<h2>왜 접근성이 중요한가?</h2>
+	
+	<p>
+		디지털 접근성은 장애를 가진 사람들이 웹사이트, 앱, 그리고 디지털 콘텐츠를 
+		동등하게 이용할 수 있도록 보장하는 것입니다. 이는 단순히 장애인만을 위한 것이 아니라, 
+		모든 사람이 더 나은 사용자 경험을 할 수 있도록 돕습니다.
+	</p>
+
+	<h2>기술 정보</h2>
+	
+	<p>
+		이 블로그는 <a href="https://astro.build/" target="_blank" rel="noopener noreferrer">Astro</a>를 
+		사용하여 구축되었으며, WCAG 2.1 AA 수준의 접근성 표준을 준수하도록 설계되었습니다. 
+		마크다운 파일을 추가하면 자동으로 게시물이 생성되며, GitHub Pages를 통해 무료로 호스팅됩니다.
+	</p>
+
+	<h2>기여 및 피드백</h2>
+	
+	<p>
+		접근성 관련 뉴스나 개선 제안이 있으시다면 언제든지 기여해 주세요. 
+		모든 피드백은 이 블로그를 더 나은 리소스로 만드는 데 도움이 됩니다.
+	</p>
+</Layout>

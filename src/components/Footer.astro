@@ -1,0 +1,22 @@
+---
+const today = new Date();
+---
+
+<footer>
+	&copy; {today.getFullYear()} 디지털 접근성 뉴스. All rights reserved.
+</footer>
+<style>
+	footer {
+		padding: 2em 1em 6em 1em;
+		background: linear-gradient(var(--gray-gradient)) no-repeat;
+		color: rgb(var(--gray));
+		text-align: center;
+	}
+	.social-links a {
+		text-decoration: none;
+		color: rgb(var(--gray));
+	}
+	.social-links a:hover {
+		color: rgb(var(--gray-dark));
+	}
+</style>

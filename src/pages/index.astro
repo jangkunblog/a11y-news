@@ -1,0 +1,39 @@
+---
+import BaseHead from '../components/BaseHead.astro';
+import Footer from '../components/Footer.astro';
+import Header from '../components/Header.astro';
+import { SITE_DESCRIPTION, SITE_TITLE } from '../consts';
+---
+
+<!doctype html>
+<html lang="ko">
+	<head>
+		<BaseHead title={SITE_TITLE} description={SITE_DESCRIPTION} />
+	</head>
+	<body>
+		<Header />
+		<main id="main-content">
+			<h1>디지털 접근성 뉴스</h1>
+			<p>
+				웹 접근성(Web Accessibility)과 디지털 포용에 관한 최신 뉴스, 업데이트, 표준 변화, 
+				그리고 모범 사례를 수집하고 아카이빙하는 블로그입니다.
+			</p>
+			<p>
+				이 사이트는 <a href="https://astro.build/">Astro</a>로 구축되었으며, 
+				WCAG 2.1 AA 수준의 웹 접근성 표준을 준수하도록 설계되었습니다.
+			</p>
+			<p>주요 콘텐츠:</p>
+			<ul>
+				<li>웹 접근성 관련 국내외 뉴스</li>
+				<li>WCAG, WAI-ARIA 등 표준 업데이트</li>
+				<li>접근성 도구 및 기술 소개</li>
+				<li>법률 및 정책 변화</li>
+				<li>실무 사례 및 가이드</li>
+			</ul>
+			<p>
+				<a href="/blog">블로그 게시물 보기</a>에서 최신 글을 확인하실 수 있습니다.
+			</p>
+		</main>
+		<Footer />
+	</body>
+</html>
