@@ -139,20 +139,31 @@ def generate_markdown_with_gemini(data: List[Dict], is_deep_dive: bool, custom_p
 
     final_prompt = deep_dive_prompt if is_deep_dive else weekly_prompt
 
-    try:
-        # 새로운 google-genai 문법 적용
-        response = client.models.generate_content(
-            model='gemini-2.5-pro',
-            contents=final_prompt,
-            config=types.GenerateContentConfig(
-                temperature=0.2,
-                max_output_tokens=8000,
+    max_retries = 3
+    base_delay = 10  # 초
+
+    for attempt in range(max_retries):
+        try:
+            # 새로운 google-genai 문법 적용
+            response = client.models.generate_content(
+                model='gemini-2.5-pro',
+                contents=final_prompt,
+                config=types.GenerateContentConfig(
+                    temperature=0.2,
+                    max_output_tokens=8000,
+                )
             )
-        )
-        return response.text
-    except Exception as e:
-        print(f"✗ Gemini API 오류: {str(e)}")
-        sys.exit(1)
+            return response.text
+        except Exception as e:
+            err_str = str(e)
+            is_503 = '503' in err_str or 'UNAVAILABLE' in err_str or 'high demand' in err_str.lower()
+            if is_503 and attempt < max_retries - 1:
+                delay = base_delay * (2 ** attempt)
+                print(f"⚠️ Gemini API 일시 과부하(503). {delay}초 후 재시도 ({attempt + 1}/{max_retries})...")
+                time.sleep(delay)
+            else:
+                print(f"✗ Gemini API 오류: {err_str}")
+                sys.exit(1)
 
 def create_blog_post(content: str, title_prefix: str) -> str:
     today = datetime.now()
