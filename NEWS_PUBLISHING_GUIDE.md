@@ -312,8 +312,10 @@ git push
    - [Google AI Studio](https://aistudio.google.com/app/apikey)에서 새 키 발급
 
 2. **Python 패키지 오류**
-   - `requirements.txt` 파일 확인
-   - 버전 호환성 문제일 수 있음
+   - 뉴스 수집에 **duckduckgo-search**가 필요합니다 (웹 전체 검색용).
+   - **로컬**: `pip install duckduckgo-search` 또는 `pip install -r requirements.txt`
+   - **GitHub Actions**: `requirements.txt`에 포함되어 있으므로 자동 설치됩니다.
+   - 버전 호환성 문제 시 `requirements.txt` 확인
 
 3. **네트워크 오류**
    - 일시적 문제일 수 있음

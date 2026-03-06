@@ -1,23 +1,29 @@
 #!/usr/bin/env python3
 """
-디지털 접근성 뉴스 수집 및 마크다운 생성 스크립트
+디지털 접근성 웹 데이터 수집 및 마크다운 리포트 생성 스크립트 (개편판)
 
-이 스크립트는 Google News RSS를 통해 접근성 관련 뉴스를 수집하고,
-Gemini API를 사용하여 요약 및 구조화된 마크다운 파일을 생성합니다.
+뉴스 기사뿐만 아니라 블로그, 공식 문서, 커뮤니티 글 등 다양한 웹 데이터를 수집하며,
+정기 발행(동향 요약)과 수동 실행(특정 주제 심층 분석)을 분리하여 처리합니다.
 """
 
 import os
 import sys
 import json
 import argparse
-import requests
-import feedparser
+import time
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict
-from urllib.parse import quote_plus
 import google.generativeai as genai
 from dotenv import load_dotenv
+
+# 웹 검색 라이브러리 (pip install duckduckgo-search 필요)
+try:
+    from duckduckgo_search import DDGS
+except ImportError:
+    print("⚠️ 'duckduckgo-search' 라이브러리가 설치되지 않았습니다.")
+    print("터미널에서 'pip install duckduckgo-search'를 실행해주세요.")
+    sys.exit(1)
 
 # 환경 변수 로드
 load_dotenv()
@@ -26,265 +32,152 @@ load_dotenv()
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 BLOG_CONTENT_PATH = Path(__file__).parent.parent / 'src' / 'content' / 'blog'
 
-# Gemini API 설정
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 else:
     print("⚠️  경고: GEMINI_API_KEY가 설정되지 않았습니다.")
-    print("   .env 파일에 API 키를 설정해주세요.")
     sys.exit(1)
 
-# 기본 뉴스 검색 키워드 (다양한 소스 포함)
-DEFAULT_SEARCH_KEYWORDS = [
-    # 국제 표준 및 가이드라인
-    "WCAG accessibility",
-    "W3C accessibility",
-    "ARIA accessibility",
-    "mobile accessibility",
-    "Google accessibility",
-    "Apple accessibility",
-    
-    # 한국어 키워드
-    "접근성",
-    "웹 접근성",
-    "디지털 접근성",
-    "장애인 접근성",
-    
-    # AI 및 신기술
-    "AI accessibility",
-    "인공지능 접근성",
-    "robot accessibility",
-    
-    # 플랫폼 및 기술
-    "screen reader",
-    "VoiceOver accessibility",
-    "TalkBack accessibility",
-    "모바일 접근성",
-    
-    # 법규 및 정책
-    "accessibility compliance",
-    "접근성 법규",
-    "장애인차별금지법",
-    
-    # 실무 및 개발
-    "accessible design",
-    "inclusive design",
-    "접근성 개발",
+# 정기 발행용 기본 키워드 (넓고 얕은 탐색)
+DEFAULT_WEEKLY_KEYWORDS = [
+    "W3C web accessibility updates",
+    "웹 접근성 동향",
+    "디지털 접근성 가이드라인",
+    "장애인차별금지법 IT",
+    "screen reader AI updates"
 ]
 
-
-def fetch_google_news(query: str, num_results: int = 10) -> List[Dict]:
+def fetch_web_data(query: str, num_results: int = 10) -> List[Dict]:
     """
-    Google News RSS를 통해 뉴스 검색
-    
-    Args:
-        query: 검색 키워드
-        num_results: 결과 개수
-        
-    Returns:
-        뉴스 아이템 리스트
+    DuckDuckGo를 사용하여 뉴스, 블로그, 문서 등 광범위한 웹 데이터 검색
     """
-    print(f"🔍 검색 중: '{query}'")
-    
-    # URL 인코딩 (공백 등 특수문자 처리)
-    encoded_query = quote_plus(query)
-    
-    # Google News RSS URL
-    rss_url = f"https://news.google.com/rss/search?q={encoded_query}&hl=ko&gl=KR&ceid=KR:ko"
+    print(f"🔍 웹 검색 중: '{query}'")
+    results = []
     
     try:
-        feed = feedparser.parse(rss_url)
+        with DDGS() as ddgs:
+            # text 검색으로 기사, 블로그, 포럼, 문서 등을 모두 가져옴
+            search_results = ddgs.text(query, max_results=num_results)
+            
+            for r in search_results:
+                results.append({
+                    'title': r.get('title', ''),
+                    'link': r.get('href', ''),
+                    'summary': r.get('body', ''),
+                    'source': r.get('href', '').split('/')[2] if 'href' in r else 'Web'
+                })
         
-        articles = []
-        for entry in feed.entries[:num_results]:
-            articles.append({
-                'title': entry.title,
-                'link': entry.link,
-                'published': entry.get('published', ''),
-                'summary': entry.get('summary', ''),
-                'source': entry.get('source', {}).get('title', 'Unknown')
-            })
-        
-        print(f"   ✓ {len(articles)}개 뉴스 발견")
-        return articles
+        print(f"   ✓ {len(results)}개 웹 문서 발견")
+        time.sleep(1) # Rate limit 방지
+        return results
         
     except Exception as e:
-        print(f"   ✗ 오류 발생: {str(e)}")
+        print(f"   ✗ 검색 오류 발생: {str(e)}")
         return []
 
-
-def collect_all_news(custom_keywords: List[str] = None) -> List[Dict]:
-    """
-    모든 키워드에 대해 뉴스 수집
-    
-    Args:
-        custom_keywords: 커스텀 검색 키워드 리스트 (None이면 기본 키워드 사용)
-    
-    Returns:
-        전체 뉴스 아이템 리스트
-    """
-    print("\n" + "="*60)
-    print("📰 디지털 접근성 뉴스 수집 시작")
-    print("="*60 + "\n")
-    
-    # 키워드 선택
-    keywords = custom_keywords if custom_keywords else DEFAULT_SEARCH_KEYWORDS
-    
-    if custom_keywords:
-        print(f"🎯 커스텀 키워드 사용: {len(keywords)}개")
-    else:
-        print(f"🔍 기본 키워드 사용: {len(keywords)}개")
-    print()
-    
-    all_articles = []
-    
+def collect_data(keywords: List[str], max_per_keyword: int) -> List[Dict]:
+    """키워드 리스트를 기반으로 데이터를 수집하고 중복을 제거"""
+    all_data = []
     for keyword in keywords:
-        articles = fetch_google_news(keyword, num_results=8)  # 키워드당 8개로 증가
-        all_articles.extend(articles)
+        articles = fetch_web_data(keyword, num_results=max_per_keyword)
+        all_data.extend(articles)
     
     # 중복 제거 (URL 기준)
     seen_links = set()
-    unique_articles = []
-    for article in all_articles:
-        if article['link'] not in seen_links:
-            seen_links.add(article['link'])
-            unique_articles.append(article)
-    
-    print(f"\n✓ 총 {len(unique_articles)}개의 고유 뉴스 수집 완료\n")
-    return unique_articles
+    unique_data = []
+    for item in all_data:
+        if item['link'] not in seen_links:
+            seen_links.add(item['link'])
+            unique_data.append(item)
+            
+    print(f"\n✓ 총 {len(unique_data)}개의 고유 웹 문서 수집 완료\n")
+    return unique_data
 
+def generate_markdown_with_gemini(data: List[Dict], is_deep_dive: bool, custom_prompt: str = None) -> str:
+    """수집된 데이터를 바탕으로 Gemini API를 호출하여 리포트 생성"""
+    print("🤖 Gemini API로 전문 리포트 작성 중...\n")
+    
+    data_json = json.dumps(data, ensure_ascii=False, indent=2)
+    
+    # [1] 심층 분석용 프롬프트 (키워드/수동 실행 시)
+    deep_dive_prompt = f"""
+역할: 너는 디지털 접근성(WCAG, ARIA 등) 최고 수준의 기술 분석가이자 리서처야.
+제공된 <수집된 웹 자료>를 바탕으로 사용자가 요청한 특정 주제에 대한 '심층 분석 리포트'를 작성해.
 
-def generate_markdown_with_gemini(articles: List[Dict], custom_prompt: str = None) -> str:
-    """
-    Gemini API를 사용하여 뉴스를 요약하고 마크다운으로 변환
-    
-    Args:
-        articles: 뉴스 아이템 리스트
-        custom_prompt: 추가 커스텀 프롬프트 (옵션)
-        
-    Returns:
-        마크다운 형식의 문자열
-    """
-    print("🤖 Gemini API로 콘텐츠 생성 중...\n")
-    
-    # 뉴스 데이터를 JSON 형식으로 준비
-    news_data = json.dumps(articles, ensure_ascii=False, indent=2)
-    
-    # 커스텀 프롬프트 추가
-    additional_instruction = ""
-    if custom_prompt:
-        additional_instruction = f"\n\n<추가 지시사항>\n{custom_prompt}\n</추가 지시사항>\n"
-        print(f"📝 커스텀 프롬프트 적용: {custom_prompt[:50]}...\n")
-    
-    # Gemini에 전달할 프롬프트 (규칙 하드코딩)
-    prompt = f"""
-역할: 너는 디지털 접근성(Digital Accessibility) 전문 객관적 리서처이자 전략 분석가야.
-제공된 뉴스/업데이트 데이터를 바탕으로 블로그 게시물을 작성해줘.
+<수집된 웹 자료>
+{data_json}
+</수집된 웹 자료>
 
-<뉴스 데이터>
-{news_data}
-</뉴스 데이터>
-
-⚠️ 중요: 이 블로그는 "디지털 접근성(Web Accessibility, WCAG, ARIA, 장애인 접근성)" 전문 블로그입니다.
-- 제공된 뉴스 중 접근성과 직접 관련이 없는 내용은 제외하거나 최소화하세요.
-- 일반 기술 뉴스라도 접근성 관점에서 재해석할 수 있는 경우만 포함하세요.
-- 접근성과 무관한 뉴스가 대부분이라면, 관련 항목만 선별하여 작성하세요.
+<사용자 요청 사항 (Custom Prompt)>
+{custom_prompt if custom_prompt else "제공된 자료를 바탕으로 해당 주제에 대해 심도 있게 분석해줘."}
+</사용자 요청 사항>
 
 [작성 규칙]
-1. 최상단 섹션: "## Summary" - 디지털 접근성 관점에서 전체 뉴스의 핵심만 3~4줄로 요약.
-   - ⚠️ 제목에 이모지를 포함하지 말 것. 단순히 "## Summary"만 사용.
-
-2. 본문 섹션: 제공된 사실 중 접근성 관련 내용만을 바탕으로 대제목(##)/소제목(###)을 나누어 작성.
-   - ⚠️ 제목에 이모지를 포함하지 말 것. (예: ## 접근성 정책 동향, ## 기술 발전)
-   - ⚠️ 절대 임의로 사실을 지어내거나 추측하지 말 것.
-   - ⚠️ 각 뉴스 항목은 개별 단락(paragraph)으로 작성하고, 항목 끝에 출처를 포함.
-   - 형식: 각 뉴스 내용을 하나의 단락으로 작성한 후, 같은 단락 내에서 괄호와 함께 출처 링크 추가.
-   - 예시:
-     ```
-     ### 소제목
-     
-     첫 번째 뉴스 내용입니다. ([출처: 매체명](URL))
-     
-     두 번째 뉴스 내용입니다. ([출처: 매체명](URL))
-     ```
-   - 각 뉴스 항목 사이에는 빈 줄을 하나 넣어 명확히 구분할 것.
-   - 출처는 반드시 괄호로 감싸서 표기: ([출처: 매체명](URL))
-   - code 사용할 경우에는 내용 영역에 적절히 삽입하세요.
-
-3. 최하단 섹션: "## 결론 및 전략" - ⚠️ 이 섹션은 반드시 포함해야 합니다.
-   - ⚠️ 제목에 이모지를 포함하지 말 것. 단순히 "## 결론 및 전략"만 사용.
-   - 이 뉴스들이 IT/기획/개발 실무자들에게 시사하는 바를 디지털 접근성 관점에서 분석
-   - 실무자 관점에서 핵심 포인트 정리
-   - 향후 접근성 대응 전략 및 실행 방안
-   - 주의해야 할 사항이나 변화의 의미
-   - 최소 3개 이상의 실행 가능한 제언 포함
-{additional_instruction}
-<출력 형식>
-- 마크다운 본문만 출력하세요.
-- 프론트매터(---)는 제외하고 본문만 작성하세요.
-- 모든 내용은 한국어를 기반으로 작성하세요.
-- 제목(##, ###)에는 절대 이모지를 사용하지 마세요.
-- 각 뉴스 항목은 독립된 단락으로 작성하고, 항목 사이에 빈 줄을 넣으세요.
-- 뉴스 내용과 출처는 같은 단락 안에 함께 작성하세요.
-- 출처 형식: 반드시 괄호로 감싸서 "([출처: 매체명](URL))" 형태로 작성하세요.
-- 출처 URL은 절대 생략하지 말고 반드시 포함하세요.
-- ⚠️ 필수: "## 결론 및 전략" 섹션을 반드시 마지막에 포함하세요.
-</출력 형식>
+1. 자료 나열 금지: 개별 자료를 단순히 나열하지 마. 제공된 여러 출처의 정보를 종합(Synthesis)하여 하나의 유기적이고 전문적인 글로 작성할 것.
+2. 환각 금지: 반드시 제공된 <수집된 웹 자료>의 사실에만 기반하여 본문을 작성해. 스스로 지어내지 마.
+3. 문서 구조:
+   - ## Summary: 이 심층 분석의 핵심 내용만 3~4줄로 요약. (이모지 금지)
+   - ## 심층 분석 (또는 적절한 대제목): 본문은 논리적 흐름에 따라 소제목(###)을 나누어 깊이 있게 작성해.
+   - 각 주장이나 정보 뒤에는 반드시 출처를 인용해. 형식: `([출처: 매체명/제목](URL))`
+4. ## 결론 (Conclusion): 이 섹션은 반드시 맨 마지막에 포함해. 본문 분석을 바탕으로 실무자(기획자/개발자 등)가 알아야 할 점, 향후 전략적 방향성, 실행 방안 등을 너의 전문적인 통찰력을 더해 도출해 내.
 """
-    
+
+    # [2] 정기 동향 요약용 프롬프트 (스케줄링 실행 시)
+    weekly_prompt = f"""
+역할: 너는 디지털 접근성 전문 정보 큐레이터이자 전략가야.
+제공된 <수집된 웹 자료>를 바탕으로 '주간 디지털 접근성 동향 리포트'를 작성해.
+
+<수집된 웹 자료>
+{data_json}
+</수집된 웹 자료>
+
+[작성 규칙]
+1. 불필요한 정보 제거: 제공된 자료 중 접근성(WCAG, A11y, 포용적 디자인 등)과 관련 없는 내용은 철저히 배제해.
+2. 주제별 그룹화: 자료를 단순히 나열하지 말고, 비슷한 주제(예: 법규 및 정책, 기술 및 도구, 가이드라인 업데이트 등)끼리 묶어서 소제목(###)으로 구성해.
+3. 환각 금지: 반드시 제공된 자료의 사실에만 기반해.
+4. 문서 구조:
+   - ## Summary: 이번 동향의 핵심 트렌드를 3~4줄로 요약. (이모지 금지)
+   - ## 주간 동향 분석 (또는 적절한 대제목): 그룹화된 주제별로 내용을 서술하며, 정보 뒤에 반드시 출처를 인용해. 형식: `([출처: 매체명/제목](URL))`
+   - 각 항목 사이에는 빈 줄을 넣어 가독성을 높여.
+5. ## 결론 및 전략 (Conclusion): 이 섹션은 반드시 맨 마지막에 포함해. 이번 동향을 종합하여 실무자들이 주의해야 할 사항, 향후 대응 전략 3가지 이상을 전략적으로 제시해.
+"""
+
+    # 모드에 따라 프롬프트 선택
+    final_prompt = deep_dive_prompt if is_deep_dive else weekly_prompt
+
     try:
-        # Gemini 모델 설정 (2.5 Pro - 더 높은 품질과 정확도)
         model = genai.GenerativeModel('gemini-2.5-pro')
-        
-        # 콘텐츠 생성
         response = model.generate_content(
-            prompt,
+            final_prompt,
             generation_config=genai.types.GenerationConfig(
-                temperature=0.3,  # 창의성 낮춤 (정확성 우선)
-                max_output_tokens=8000,  # 토큰 제한 증가 (결론 섹션 포함)
+                temperature=0.2, # 논리성과 정확성을 위해 낮춤
+                max_output_tokens=8000,
             )
         )
-        
-        print("✓ 콘텐츠 생성 완료\n")
         return response.text
-        
     except Exception as e:
         print(f"✗ Gemini API 오류: {str(e)}")
         sys.exit(1)
 
-
-def create_blog_post(content: str) -> str:
-    """
-    마크다운 파일 생성
-    
-    Args:
-        content: 마크다운 본문 내용
-        
-    Returns:
-        생성된 파일 경로
-    """
-    # 현재 날짜와 시간으로 파일명 생성 (동일 날짜 여러 게시물 지원)
+def create_blog_post(content: str, title_prefix: str) -> str:
+    """마크다운 파일 생성 및 프론트매터 삽입"""
     today = datetime.now()
     date_str = today.strftime('%Y-%m-%d')
     time_str = today.strftime('%H%M%S')
-    filename = f"a11y-news-{date_str}-{time_str}.md"
+    filename = f"a11y-post-{date_str}-{time_str}.md"
     
-    # 프론트매터 생성 (pubDate에 시간 포함하여 정렬)
-    # ISO 8601 형식으로 변경하여 Astro가 정확하게 파싱할 수 있도록 함
     pub_date_iso = today.strftime("%Y-%m-%dT%H:%M:%S")
+    
     frontmatter = f"""---
-title: '디지털 접근성 뉴스 - {today.strftime("%Y년 %m월 %d일 %H:%M")}'
-description: '최신 웹 접근성 및 WCAG 관련 뉴스 모음'
+title: '{title_prefix} - {today.strftime("%Y년 %m월 %d일")}'
+description: '최신 웹 접근성 및 디지털 포용성 분석 리포트'
 pubDate: '{pub_date_iso}'
 heroImage: '../../assets/blog-placeholder-1.jpg'
 ---
 
 """
-    
-    # 전체 콘텐츠
     full_content = frontmatter + content
     
-    # 파일 저장
     BLOG_CONTENT_PATH.mkdir(parents=True, exist_ok=True)
     file_path = BLOG_CONTENT_PATH / filename
     
@@ -293,66 +186,55 @@ heroImage: '../../assets/blog-placeholder-1.jpg'
     
     return str(file_path)
 
-
 def main():
-    """메인 함수"""
-    # 커맨드라인 인자 파싱
-    parser = argparse.ArgumentParser(
-        description='디지털 접근성 뉴스를 자동으로 수집하고 블로그 게시물을 생성합니다.'
-    )
-    parser.add_argument(
-        '--keywords',
-        nargs='+',
-        help='검색할 키워드 (여러 개 가능). 예: --keywords "WCAG 3.0" "ARIA updates"'
-    )
-    parser.add_argument(
-        '--custom-prompt',
-        type=str,
-        help='Gemini에 추가로 전달할 커스텀 프롬프트'
-    )
+    parser = argparse.ArgumentParser(description='디지털 접근성 웹 데이터 수집 및 리포트 생성기')
+    parser.add_argument('--keywords', nargs='+', help='특정 주제 심층 분석용 키워드 (예: "WCAG 3.0 draft")')
+    parser.add_argument('--custom-prompt', type=str, help='Gemini에 전달할 추가 지시사항')
     
     args = parser.parse_args()
     
+    is_deep_dive = bool(args.keywords or args.custom_prompt)
+    
     print("\n" + "🌐 " * 20)
-    print("   디지털 접근성 뉴스 자동 수집기")
+    print("   디지털 접근성 리포트 자동 생성기")
     print("🌐 " * 20 + "\n")
     
     try:
-        # 1. 뉴스 수집
-        custom_keywords = args.keywords if args.keywords else None
-        articles = collect_all_news(custom_keywords)
-        
-        if not articles:
-            print("⚠️  수집된 뉴스가 없습니다.")
+        # 모드 분리 처리
+        if is_deep_dive:
+            print("🚀 [심층 분석 모드] 실행 중...")
+            search_keywords = args.keywords if args.keywords else ["디지털 접근성"]
+            # 심도 있는 문서를 찾기 위해 키워드당 15개의 검색결과를 가져옴
+            data = collect_data(search_keywords, max_per_keyword=15)
+            title_prefix = f"심층 분석: {', '.join(search_keywords)}"
+        else:
+            print("📰 [주간 동향 모드] 실행 중...")
+            # 다양한 주제를 얕게 훑기 위해 여러 키워드로 검색
+            data = collect_data(DEFAULT_WEEKLY_KEYWORDS, max_per_keyword=5)
+            title_prefix = "디지털 접근성 주간 동향"
+            
+        if not data:
+            print("⚠️  수집된 웹 데이터가 없습니다.")
             return
+            
+        # 콘텐츠 생성
+        markdown_content = generate_markdown_with_gemini(data, is_deep_dive, args.custom_prompt)
         
-        # 2. Gemini로 콘텐츠 생성
-        markdown_content = generate_markdown_with_gemini(articles, args.custom_prompt)
+        # 파일 저장
+        file_path = create_blog_post(markdown_content, title_prefix)
         
-        # 3. 마크다운 파일 생성
-        file_path = create_blog_post(markdown_content)
-        
-        # 4. 결과 출력
         print("="*60)
         print("✅ 블로그 게시물 생성 완료!")
         print("="*60)
         print(f"📄 파일 위치: {file_path}")
-        print(f"📊 수집된 뉴스: {len(articles)}개")
-        if args.keywords:
-            print(f"🎯 커스텀 키워드: {', '.join(args.keywords)}")
-        print(f"📅 생성 일시: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
-        print("\n💡 Astro 개발 서버에서 자동으로 반영됩니다.")
-        print("   브라우저를 새로고침하여 확인하세요!\n")
+        print(f"📊 수집/분석된 웹 문서: {len(data)}개")
         
     except KeyboardInterrupt:
-        print("\n\n⚠️  사용자에 의해 중단되었습니다.")
+        print("\n\n⚠️  중단되었습니다.")
         sys.exit(0)
     except Exception as e:
         print(f"\n❌ 오류 발생: {str(e)}")
-        import traceback
-        traceback.print_exc()
         sys.exit(1)
-
 
 if __name__ == "__main__":
     main()
