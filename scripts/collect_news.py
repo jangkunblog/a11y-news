@@ -8,6 +8,7 @@ import sys
 import json
 import argparse
 import time
+import urllib.parse
 from datetime import datetime
 from pathlib import Path
 from typing import List, Dict
@@ -21,11 +22,11 @@ except ImportError:
     print("⚠️ 'google-genai' 라이브러리가 설치되지 않았습니다.")
     sys.exit(1)
 
-# 새로운 웹 검색 라이브러리 적용
+# googlesearch-python (무료, API 키 불필요)
 try:
-    from ddgs import DDGS
+    from googlesearch import search as google_search
 except ImportError:
-    print("⚠️ 'ddgs' 라이브러리가 설치되지 않았습니다. (duckduckgo-search에서 이름 변경됨)")
+    print("⚠️ 'googlesearch-python' 라이브러리가 설치되지 않았습니다. pip install googlesearch-python")
     sys.exit(1)
 
 # 환경 변수 로드
@@ -50,28 +51,30 @@ DEFAULT_WEEKLY_KEYWORDS = [
 ]
 
 def fetch_web_data(query: str, num_results: int = 10) -> List[Dict]:
-    """DDGS를 사용하여 웹 데이터 검색"""
+    """googlesearch-python으로 Google 웹 검색 (무료, API 키 불필요)"""
     print(f"🔍 웹 검색 중: '{query}'")
     results = []
-    
+    num_results = min(num_results, 20)  # 요청당 적당한 수
     try:
-        # DDGS 최신 문법 적용
-        with DDGS() as ddgs:
-            search_results = ddgs.text(query, max_results=num_results)
-            
-            if search_results:
-                for r in search_results:
-                    results.append({
-                        'title': r.get('title', ''),
-                        'link': r.get('href', ''),
-                        'summary': r.get('body', ''),
-                        'source': r.get('href', '').split('/')[2] if 'href' in r else 'Web'
-                    })
-        
+        # advanced=True → title, url, description 반환
+        search_results = google_search(
+            query,
+            num_results=num_results,
+            advanced=True,
+            lang="ko",
+            sleep_interval=2,  # 요청 간격 (차단 방지)
+        )
+        for r in search_results:
+            link = getattr(r, "url", "") or ""
+            results.append({
+                "title": getattr(r, "title", "") or "",
+                "link": link,
+                "summary": getattr(r, "description", "") or "",
+                "source": urllib.parse.urlparse(link).netloc if link else "Web",
+            })
         print(f"   ✓ {len(results)}개 웹 문서 발견")
-        time.sleep(2) # Rate limit 방지 (조금 늘림)
+        time.sleep(1)
         return results
-        
     except Exception as e:
         print(f"   ✗ 검색 오류 발생: {str(e)}")
         return []
