@@ -330,9 +330,9 @@ git push
 
 **확인 사항:**
 1. Vercel 배포 상태 확인
-   - https://app.netlify.com
-   - 사이트 선택 > Deploys 탭
-   - 최근 배포가 "Published" 상태인지 확인
+   - https://vercel.com/dashboard
+   - 프로젝트 선택 > Deployments 탭
+   - 최근 배포가 "Ready" 상태인지 확인
 
 2. 브라우저 캐시 삭제
    - Cmd+Shift+R (Mac) 또는 Ctrl+Shift+R (Windows)
