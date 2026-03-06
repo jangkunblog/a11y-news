@@ -158,7 +158,7 @@ def create_blog_post(content: str, title_prefix: str) -> str:
     today = datetime.now()
     date_str = today.strftime('%Y-%m-%d')
     time_str = today.strftime('%H%M%S')
-    filename = f"a11y-post-{date_str}-{time_str}.md"
+    filename = f"a11y-news-{date_str}-{time_str}.md"
     
     pub_date_iso = today.strftime("%Y-%m-%dT%H:%M:%S")
     
