@@ -10,7 +10,7 @@ import argparse
 import time
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from typing import List, Dict
 from dotenv import load_dotenv
@@ -41,12 +41,38 @@ if not GEMINI_API_KEY:
 
 client = genai.Client(api_key=GEMINI_API_KEY)
 
-DEFAULT_WEEKLY_KEYWORDS = [
-    "웹 접근성 동향",
-    "디지털 포용성 ESG",
-    "배리어프리 IT 카카오 네이버",
-    "무장애 점자 스마트",
-]
+# reference/a11y-weekly/reference/sources.md 기반 5개 카테고리별 검색 키워드
+# 카테고리별 최소 1개·최대 5개 항목, 지난 1주 이내 콘텐츠 우선
+CATEGORY_KEYWORDS = {
+    "국내외 뉴스": [
+        "web accessibility news",
+        "디지털 접근성",
+        "웹 접근성 뉴스",
+        "카카오 접근성",
+    ],
+    "표준 업데이트": [
+        "WCAG update",
+        "WAI-ARIA update",
+        "W3C accessibility",
+    ],
+    "도구 & 기술": [
+        "accessibility tool release",
+        "axe-core update",
+        "screen reader update",
+        "접근성 검사 도구",
+    ],
+    "법률 & 정책": [
+        "accessibility law",
+        "EU accessibility act",
+        "장애인차별금지법",
+        "정보통신 접근성",
+    ],
+    "실무 사례 & 가이드": [
+        "accessibility best practice",
+        "a11y guide",
+        "접근성 개선 사례",
+    ],
+}
 
 def extract_text_from_url(url: str) -> str:
     """URL에 직접 접속하여 웹페이지 본문(텍스트)을 크롤링합니다."""
@@ -111,26 +137,45 @@ def fetch_search_and_scrape(query: str, num_results: int = 5) -> List[Dict]:
         return []
 
 def collect_data(keywords: List[str], max_per_keyword: int = 5) -> List[Dict]:
+    """단일 키워드 목록으로 수집 (심층 분석 모드용)."""
     all_data = []
     for keyword in keywords:
         articles = fetch_search_and_scrape(keyword, num_results=max_per_keyword)
         all_data.extend(articles)
-    
     seen_links = set()
     unique_data = []
     for item in all_data:
-        if item['link'] not in seen_links:
-            seen_links.add(item['link'])
+        if item["link"] not in seen_links:
+            seen_links.add(item["link"])
             unique_data.append(item)
-            
     print(f"\n✓ 총 {len(unique_data)}개의 웹 문서 본문 크롤링 완료\n")
+    return unique_data
+
+
+def collect_data_by_categories(max_per_keyword: int = 3) -> List[Dict]:
+    """reference 5개 카테고리별로 검색해 수집. 각 항목에 category 키를 부여."""
+    all_data = []
+    for category, keywords in CATEGORY_KEYWORDS.items():
+        print(f"\n📂 카테고리: {category}")
+        for keyword in keywords[:2]:  # 카테고리당 최대 2개 키워드로 제한
+            articles = fetch_search_and_scrape(keyword, num_results=max_per_keyword)
+            for a in articles:
+                a["category"] = category
+                all_data.append(a)
+            time.sleep(0.5)
+    seen_links = set()
+    unique_data = []
+    for item in all_data:
+        if item["link"] not in seen_links:
+            seen_links.add(item["link"])
+            unique_data.append(item)
+    print(f"\n✓ 총 {len(unique_data)}개 항목 수집 (카테고리별)\n")
     return unique_data
 
 def generate_markdown_with_gemini(data: List[Dict], is_deep_dive: bool, custom_prompt: str = None) -> str:
     print("🤖 Gemini API로 전문 리포트 작성 중...\n")
-    
     data_json = json.dumps(data, ensure_ascii=False, indent=2)
-    
+
     deep_dive_prompt = f"""
 역할: 너는 디지털 접근성, 배리어프리, ESG 경영 전문가야.
 아래 <수집된 웹 페이지 본문 자료>는 내가 파이썬으로 직접 웹사이트를 돌아다니며 긁어온 실제 본문 텍스트들이야.
@@ -154,21 +199,51 @@ def generate_markdown_with_gemini(data: List[Dict], is_deep_dive: bool, custom_p
 4. ## 결론 (Conclusion): 맨 마지막에 포함. 분석을 바탕으로 실무자가 참고할 점, 향후 전략적 방향성을 제시해.
 """
 
+    # reference: templates/weekly-digest-template.md + reference/sources.md 수집 규칙
+    week_end = datetime.now()
+    week_start = week_end - timedelta(days=6)
+    date_range = f"{week_start.strftime('%Y.%m.%d')} ~ {week_end.strftime('%m.%d')}"
+
     weekly_prompt = f"""
-역할: 너는 디지털 접근성 전문 정보 큐레이터야.
-아래 <수집된 웹 페이지 본문 자료>를 바탕으로 '주간 디지털 접근성 동향 리포트'를 상세하게 작성해.
+역할: 너는 웹 접근성(A11Y)과 디지털 포용 주간 다이제스트 전문 큐레이터야.
+아래 <수집된 웹 페이지 본문 자료>는 카테고리별로 수집한 것이야. 이 자료만 바탕으로 'A11Y 주간 다이제스트' 포스트를 작성해.
 
 <수집된 웹 페이지 본문 자료>
 {data_json}
 </수집된 웹 페이지 본문 자료>
 
+[필수 문서 구조 — 반드시 이 순서와 형식을 따를 것]
+
+1. **도입부** (섹션 제목 없이 본문 맨 위에 1~2문단)
+   - 이번 주 접근성 소식 요약. 가장 주목할 만한 뉴스를 하이라이트하고 전체 흐름을 간략히 소개.
+
+2. **## 국내외 뉴스**
+   - 각 항목: ### [뉴스 제목] → 2~3줄 요약(왜 중요한지, 어떤 영향인지) → 다음 줄에 출처 블록.
+   - 출처 형식: > 출처: [출처명](URL) (YYYY.MM.DD)
+   - 해당 카테고리 자료가 없으면 "이번 주에는 주요 업데이트가 없었습니다." 한 줄만 적기.
+
+3. **## 표준 업데이트 (WCAG, WAI-ARIA 등)**
+   - 같은 형식: ### 제목, 2~3줄 요약, > 출처: [출처명](URL) (YYYY.MM.DD)
+   - 없으면 "이번 주에는 주요 업데이트가 없었습니다."
+
+4. **## 도구 & 기술**
+   - 동일 형식. 없으면 "이번 주에는 주요 업데이트가 없었습니다."
+
+5. **## 법률 & 정책**
+   - 동일 형식. 없으면 "이번 주에는 주요 업데이트가 없었습니다."
+
+6. **## 실무 사례 & 가이드**
+   - 동일 형식. 없으면 "이번 주에는 주요 업데이트가 없었습니다."
+
+7. **## 마무리**
+   - 1~2문단: 이번 주 핵심 요약, 주목할 변화, 다음 주 예고. 독자에게 접근성 실천을 독려하는 메시지로 마무리.
+
 [작성 규칙]
-1. 상세한 내용 작성: 기업/지자체의 구체적인 활동(점자달력, 무장애나눔길 등)과 기술 업데이트를 묶어서 아주 상세하게 작성해.
-2. 주제별 그룹화: 비슷한 주제끼리 묶어서 소제목(###)으로 구성해.
-3. 문서 구조:
-   - ## Summary: 핵심 트렌드 3~4줄 요약. (이모지 금지)
-   - ## 주간 동향 분석 (대제목): 그룹화된 주제별 서술. 정보 뒤에 반드시 출처 인용. 형식: `([출처: 매체명/제목](URL))`
-4. ## 결론 및 전략 (Conclusion): 맨 마지막에 포함. 향후 대응 전략을 제시해.
+- 환각 금지: 제공된 자료에 있는 사실과 링크만 사용. 자료에 없는 URL이나 제목을 만들지 마라.
+- 카테고리(category) 필드가 있는 항목은 해당 카테고리 섹션에만 배치해.
+- 각 섹션당 최소 1개 최대 5개 항목. 항목이 없으면 "이번 주에는 주요 업데이트가 없었습니다." 로만 표기.
+- 날짜는 자료에 없으면 이번 주 범위({date_range}) 중 하루로 추정해 YYYY.MM.DD 형식으로 출처에 기재.
+- 이모지 사용 금지.
 """
 
     final_prompt = deep_dive_prompt if is_deep_dive else weekly_prompt
@@ -187,17 +262,22 @@ def generate_markdown_with_gemini(data: List[Dict], is_deep_dive: bool, custom_p
         print(f"✗ Gemini API 오류: {str(e)}")
         sys.exit(1)
 
-def create_blog_post(content: str, title_prefix: str) -> str:
+def create_blog_post(content: str, title_prefix: str, is_weekly_digest: bool = False) -> str:
     today = datetime.now()
     date_str = today.strftime('%Y-%m-%d')
     time_str = today.strftime('%H%M%S')
     filename = f"a11y-news-{date_str}-{time_str}.md"
-    
     pub_date_iso = today.strftime("%Y-%m-%dT%H:%M:%S")
-    
+    # reference: title/description 스타일
+    if is_weekly_digest:
+        title = title_prefix
+        description = f"{title_prefix} 웹 접근성과 디지털 포용 관련 주간 뉴스 다이제스트"
+    else:
+        title = f"{title_prefix} - {today.strftime('%Y년 %m월 %d일')}"
+        description = "최신 웹 접근성 및 디지털 포용성 분석 리포트"
     frontmatter = f"""---
-title: '{title_prefix} - {today.strftime("%Y년 %m월 %d일")}'
-description: '최신 웹 접근성 및 디지털 포용성 분석 리포트'
+title: '{title}'
+description: '{description}'
 pubDate: '{pub_date_iso}'
 heroImage: '../../assets/blog-placeholder-1.jpg'
 ---
@@ -233,16 +313,19 @@ def main():
             data = collect_data(search_keywords, max_per_keyword=5)
             title_prefix = f"심층 분석: {', '.join(search_keywords)}"
         else:
-            print("📰 [주간 동향 모드] 실행 중...")
-            data = collect_data(DEFAULT_WEEKLY_KEYWORDS, max_per_keyword=3)
-            title_prefix = "디지털 접근성 주간 동향"
+            print("📰 [주간 다이제스트 모드] 실행 중...")
+            data = collect_data_by_categories(max_per_keyword=3)
+            # reference: "A11Y 주간 다이제스트: YYYY.MM.DD ~ MM.DD"
+            week_end = datetime.now()
+            week_start = week_end - timedelta(days=6)
+            title_prefix = f"A11Y 주간 다이제스트: {week_start.strftime('%Y.%m.%d')} ~ {week_end.strftime('%m.%d')}"
             
         if not data:
             print("⚠️ 수집된 웹 데이터가 없습니다.")
             return
             
         markdown_content = generate_markdown_with_gemini(data, is_deep_dive, args.custom_prompt)
-        file_path = create_blog_post(markdown_content, title_prefix)
+        file_path = create_blog_post(markdown_content, title_prefix, is_weekly_digest=not is_deep_dive)
         
         print("="*60)
         print("✅ 블로그 게시물 생성 완료!")

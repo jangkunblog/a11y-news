@@ -33,22 +33,23 @@ python scripts/collect_news.py
 ### collect_news.py
 
 **기능:**
-- Google News RSS에서 접근성 관련 뉴스 검색
-- Gemini API로 뉴스 요약 및 구조화
+- 구글 검색(googlesearch-python) + 선택적 본문 크롤링(BeautifulSoup)으로 접근성 뉴스 수집
+- Gemini API로 주간 다이제스트 또는 심층 분석 리포트 생성
 - 마크다운 블로그 게시물 자동 생성
+
+**실행 모드:**
+- **기본(주간 다이제스트)**: `python scripts/collect_news.py` — 5개 카테고리별 검색 후 다이제스트 형식으로 작성
+- **심층 분석**: `python scripts/collect_news.py --keywords "WCAG 3.0" "ARIA"` 또는 `--custom-prompt "..."`
 
 **필수 환경 변수:**
 - `GEMINI_API_KEY`: Google Gemini API 키
 
 **생성 파일:**
-- `src/content/blog/a11y-news-YYYY-MM-DD.md`
+- `src/content/blog/a11y-news-YYYY-MM-DD-HHMMSS.md`
 
-**검색 키워드:**
-- web accessibility WCAG
-- digital accessibility standards
-- ARIA accessibility
-- 웹 접근성
-- 디지털 접근성
+**주간 다이제스트 카테고리·키워드** (`reference/a11y-weekly/reference/sources.md` 기반):
+- 국내외 뉴스, 표준 업데이트, 도구 & 기술, 법률 & 정책, 실무 사례 & 가이드
+- 카테고리별 키워드는 `collect_news.py`의 `CATEGORY_KEYWORDS` 참고
 
 ### test_collection.py
 
@@ -58,33 +59,22 @@ python scripts/collect_news.py
 
 ## 📝 생성되는 콘텐츠 규칙
 
-Gemini API에 전달되는 프롬프트는 다음을 보장합니다:
+**주간 다이제스트 모드** (`reference` 템플릿 기반):
+1. **도입부** — 이번 주 소식 1~2문단 요약
+2. **## 국내외 뉴스** · **## 표준 업데이트** · **## 도구 & 기술** · **## 법률 & 정책** · **## 실무 사례 & 가이드** — 항목별 `### 제목`, 2~3줄 요약, `> 출처: [출처명](URL) (YYYY.MM.DD)`
+3. **## 마무리** — 핵심 요약 및 독자 독려 메시지
 
-1. ✅ **요약(Summary) 섹션** 최상단 배치
-2. ✅ **구조화된 본문** (대제목, 소제목)
-3. ✅ **출처 명시** (모든 정보에 URL 링크)
-4. ✅ **결론(Conclusion) 섹션** 실무 전략 포함
+**심층 분석 모드:** Summary → 심층 분석(소제목) → 결론(Conclusion), 출처 인용 포함.
 
 ## 🎯 커스터마이징
 
-### 검색 키워드 변경
+### 주간 다이제스트 키워드 변경
 
-`collect_news.py`:
-
-```python
-SEARCH_KEYWORDS = [
-    "web accessibility WCAG",
-    # 여기에 원하는 키워드 추가
-]
-```
+`collect_news.py`의 `CATEGORY_KEYWORDS`에서 카테고리별 검색어를 수정합니다.
 
 ### 수집 개수 조정
 
-`collect_news.py`의 `collect_all_news()`:
-
-```python
-articles = fetch_google_news(keyword, num_results=5)  # 5 -> 원하는 개수
-```
+`collect_news.py`에서 `collect_data_by_categories(max_per_keyword=3)` 또는 `collect_data(..., max_per_keyword=5)`의 인자를 변경합니다.
 
 ### AI 모델 변경
 
