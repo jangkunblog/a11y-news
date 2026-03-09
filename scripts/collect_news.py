@@ -115,21 +115,26 @@ def fetch_search_and_scrape(query: str, num_results: int = 5) -> List[Dict]:
         
         for url in urls:
             print(f"   -> 페이지 분석 중: {url[:60]}...")
-            
-            # 여기서 핵심! 검색된 URL의 본문 내용을 직접 긁어옵니다.
             content = extract_text_from_url(url)
-            
-            # 본문이 유의미하게 추출된 경우에만 데이터에 포함
+            source = url.split("/")[2] if "//" in url else "Web"
+            # 본문이 충분하면 본문 사용, 아니어도 URL은 수집해 두어 0건 방지(많은 사이트가 봇/JS로 본문 차단)
             if content and len(content) > 100:
                 results.append({
-                    'title': f"웹 문서",
-                    'link': url,
-                    'summary': content, # 단순 요약이 아닌 실제 본문 텍스트가 들어감!
-                    'source': url.split('/')[2] if '//' in url else 'Web'
+                    "title": f"웹 문서",
+                    "link": url,
+                    "summary": content,
+                    "source": source,
                 })
-            time.sleep(1) # 서버에 무리가 가지 않도록 1초 대기
-            
-        print(f"   ✓ {len(results)}개 페이지 본문 성공적 추출")
+            else:
+                # 본문 추출 실패 시에도 링크만으로 항목 추가 → Gemini가 링크 기준으로 다이제스트 작성 가능
+                results.append({
+                    "title": f"웹 문서 ({source})",
+                    "link": url,
+                    "summary": f"[본문 자동 추출 실패. 검색 쿼리: {query}. 해당 URL을 출처로만 참고하세요.]",
+                    "source": source,
+                })
+            time.sleep(1)
+        print(f"   ✓ {len(results)}개 페이지 수집 (본문 추출 성공 + 링크만 포함)")
         return results
         
     except Exception as e:
